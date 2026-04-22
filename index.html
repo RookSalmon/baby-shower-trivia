@@ -64,6 +64,7 @@ html,body{height:100%;background:#fdf6f9;font-family:'Quicksand',sans-serif;colo
 .tot-categories{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
 .tot-cat{border-radius:16px;padding:12px 10px;text-align:center;min-height:120px;transition:border-color 0.15s;}
 .tot-cat-a{background:var(--pink-bg);border:2px solid var(--pink);}
+.tot-cat.drag-over{filter:brightness(0.93);}
 .tot-cat-b{background:var(--mint-bg);border:2px solid var(--mint);}
 .tot-cat-a.drop-over{border-color:var(--pink-dark);border-style:dashed;}
 .tot-cat-b.drop-over{border-color:var(--mint-dark);border-style:dashed;}
@@ -572,23 +573,32 @@ function commitTotDrop(cat){
   badge.addEventListener('dragstart',e=>{
     e.dataTransfer.effectAllowed='move';
     totDragging=item;
-    // Remove badge immediately so it doesn't appear in both places
     setTimeout(()=>badge.remove(),0);
   });
-  badge.addEventListener('touchstart',()=>{totDragging=item;totTouchCat=null;},{passive:true});
+  badge.addEventListener('touchstart',e=>{
+    totDragging=item; totTouchCat=null;
+    badge.classList.add('is-dragging');
+  },{passive:true});
   badge.addEventListener('touchmove',e=>{
     e.preventDefault();
     const t=e.touches[0],el=document.elementFromPoint(t.clientX,t.clientY);
     const zone=el&&el.closest('.tot-cat');
     totTouchCat=zone?zone.id.replace('tot-zone-',''):null;
+    // Highlight the target zone
+    document.querySelectorAll('.tot-cat').forEach(z=>z.classList.remove('drag-over'));
+    if(zone) zone.classList.add('drag-over');
   },{passive:false});
   badge.addEventListener('touchend',()=>{
-    if(totTouchCat&&totDragging){
+    badge.classList.remove('is-dragging');
+    document.querySelectorAll('.tot-cat').forEach(z=>z.classList.remove('drag-over'));
+    const targetCat=totTouchCat;
+    totDragging=null; totTouchCat=null;
+    if(targetCat && targetCat!==cat){
+      // Dropped in a different category — move it
       badge.remove();
-      commitTotDrop(totTouchCat);
-    } else {
-      totDragging=null; totTouchCat=null;
+      commitTotDrop(targetCat);
     }
+    // If dropped in same category or outside — do nothing, badge stays put
   });
 
   document.getElementById('tot-drop-'+cat).appendChild(badge);
@@ -1035,16 +1045,7 @@ function buildLkGrid(){
     wrap.appendChild(svg);
 
     // Touch
-    wrap.addEventListener('touchmove',e=>{
-      if(!lkDragging)return;
-      e.preventDefault();
-      document.querySelectorAll('.lk-answer-slot').forEach(s=>s.classList.remove('drag-over'));
-      const t=e.touches[0];
-      const el=document.elementFromPoint(t.clientX,t.clientY);
-      const slot=el&&el.closest('.lk-answer-slot');
-      if(slot&&slot.dataset.answerId){slot.classList.add('drag-over');lkTouchSlot=slot.dataset.answerId;}
-      else lkTouchSlot=null;
-    },{passive:false});
+
   });
 }
 function addSlotListeners(el, id){
@@ -1089,7 +1090,7 @@ function buildLkGridR2(){
     ln(e[2].c.midX,e[2].c.t,e[2].c.midX,e[1].c.b,'pink');
     ln(e[0].r.midX,e[0].r.b,e[0].r.midX,e[1].r.t,'green');
     ln(e[1].r.midX,e[1].r.b,e[1].r.midX,e[2].r.t,'amber');
-    wrap.addEventListener('touchmove',ev=>{if(!lkDragging)return;ev.preventDefault();document.querySelectorAll('.lk-answer-slot').forEach(s=>s.classList.remove('drag-over'));const t=ev.touches[0],el=document.elementFromPoint(t.clientX,t.clientY),slot=el&&el.closest('.lk-answer-slot');if(slot&&slot.dataset.answerId){slot.classList.add('drag-over');lkTouchSlot=slot.dataset.answerId;}else lkTouchSlot=null;},{passive:false});
+    
   }));
 }
 
@@ -1122,7 +1123,7 @@ function buildLkGridR3(){
     ln(e[3].l.midX,e[3].l.b,e[3].l.midX,e[4].l.t,'pink');
     ln(e[1].r.midX,e[1].r.b,e[1].r.midX,e[2].r.t,'mint');
     ln(e[2].r.midX,e[2].r.b,e[2].r.midX,e[3].r.t,'blue');
-    wrap.addEventListener('touchmove',ev=>{if(!lkDragging)return;ev.preventDefault();document.querySelectorAll('.lk-answer-slot').forEach(s=>s.classList.remove('drag-over'));const t=ev.touches[0],el=document.elementFromPoint(t.clientX,t.clientY),slot=el&&el.closest('.lk-answer-slot');if(slot&&slot.dataset.answerId){slot.classList.add('drag-over');lkTouchSlot=slot.dataset.answerId;}else lkTouchSlot=null;},{passive:false});
+    
   }));
 }
 
@@ -1163,7 +1164,7 @@ function buildLkGridR4(){
     ln(e[1].r.midX,e[1].r.b,e[1].r.midX,e[2].r.t,'mint');
     ln(e[2].r.midX,e[2].r.b,e[2].r.midX,e[3].r.t,'mint');
     ln(e[3].r.midX,e[3].r.b,e[3].r.midX,e[4].r.t,'mint');
-    wrap.addEventListener('touchmove',ev=>{if(!lkDragging)return;ev.preventDefault();document.querySelectorAll('.lk-answer-slot').forEach(s=>s.classList.remove('drag-over'));const t=ev.touches[0],el=document.elementFromPoint(t.clientX,t.clientY),slot=el&&el.closest('.lk-answer-slot');if(slot&&slot.dataset.answerId){slot.classList.add('drag-over');lkTouchSlot=slot.dataset.answerId;}else lkTouchSlot=null;},{passive:false});
+    
   }));
 }
 
@@ -1174,6 +1175,20 @@ function renderLkStack(){
   if(unplaced.length===0){ stack.style.cssText='height:0;margin:0;'; return; }
   stack.style.cssText='display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;padding:4px 0;height:auto;position:relative;';
   unplaced.forEach(ans=>stack.appendChild(makeLkCard(ans)));
+}
+
+function lkTouchMoveHandler(e){
+  e.preventDefault();
+  document.querySelectorAll('.lk-answer-slot').forEach(s=>s.classList.remove('drag-over'));
+  const t=e.touches[0];
+  const el=document.elementFromPoint(t.clientX,t.clientY);
+  const slot=el&&el.closest('.lk-answer-slot');
+  if(slot&&slot.dataset.answerId){
+    slot.classList.add('drag-over');
+    lkTouchSlot=slot.dataset.answerId;
+  } else {
+    lkTouchSlot=null;
+  }
 }
 
 function makeLkCard(ans){
@@ -1193,9 +1208,14 @@ function makeLkCard(ans){
     lkDragging=null;
     document.querySelectorAll('.lk-answer-slot').forEach(s=>s.classList.remove('drag-over'));
   });
-  card.addEventListener('touchstart',()=>{lkDragging=ans; lkTouchSlot=null; card.classList.add('is-dragging');},{passive:true});
+  card.addEventListener('touchstart',()=>{
+    lkDragging=ans; lkTouchSlot=null;
+    card.classList.add('is-dragging');
+    document.addEventListener('touchmove', lkTouchMoveHandler, {passive:false});
+  },{passive:true});
   card.addEventListener('touchend',()=>{
     card.classList.remove('is-dragging');
+    document.removeEventListener('touchmove', lkTouchMoveHandler);
     document.querySelectorAll('.lk-answer-slot').forEach(s=>s.classList.remove('drag-over'));
     if(lkTouchSlot) commitLkDrop(lkTouchSlot);
     lkDragging=null; lkTouchSlot=null;
@@ -1233,28 +1253,18 @@ function renderSlot(slotEl, ans){
   // Touch: drag out from slot
   slotEl.addEventListener('touchstart',()=>{
     lkDragging=ans; lkTouchSlot=null;
+    // Remove from placed immediately so it shows back in stack
+    delete lkPlaced[ans.id];
+    slotEl.innerHTML='';
+    slotEl.classList.remove('filled','wrong');
+    slotEl.draggable=false;
+    slotEl.style.cursor='';
+    renderLkStack();
+    checkSubmitVisibility();
+    document.addEventListener('touchmove', lkTouchMoveHandler, {passive:false});
   },{passive:true});
-  slotEl.addEventListener('touchmove',e=>{
-    if(!lkDragging) return;
-    e.preventDefault();
-    // If finger moves away from slot, clear it
-    const t=e.touches[0];
-    const el=document.elementFromPoint(t.clientX,t.clientY);
-    if(!slotEl.contains(el) && Object.keys(lkPlaced).includes(ans.id)){
-      delete lkPlaced[ans.id];
-      slotEl.innerHTML='';
-      slotEl.classList.remove('filled','wrong');
-      slotEl.draggable=false;
-      slotEl.style.cursor='';
-      renderLkStack();
-      checkSubmitVisibility();
-    }
-    document.querySelectorAll('.lk-answer-slot').forEach(s=>s.classList.remove('drag-over'));
-    const target=el&&el.closest('.lk-answer-slot');
-    if(target&&target.dataset.answerId){target.classList.add('drag-over');lkTouchSlot=target.dataset.answerId;}
-    else lkTouchSlot=null;
-  },{passive:false});
   slotEl.addEventListener('touchend',()=>{
+    document.removeEventListener('touchmove', lkTouchMoveHandler);
     document.querySelectorAll('.lk-answer-slot').forEach(s=>s.classList.remove('drag-over'));
     if(lkTouchSlot&&lkDragging) commitLkDrop(lkTouchSlot);
     lkDragging=null; lkTouchSlot=null;
