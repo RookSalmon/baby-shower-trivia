@@ -697,6 +697,7 @@ function chronoNext(){
     card.classList.add('is-dragging');
   },{passive:true});
 
+  let chronoScrollRAF=null;
   card.addEventListener('touchmove',e=>{
     e.preventDefault();
     const t=e.touches[0];
@@ -705,11 +706,25 @@ function chronoNext(){
     const dz=el&&el.closest('.ct-drop');
     if(dz){dz.classList.add('active-drop'); chronoTouchDz=parseInt(dz.dataset.idx);}
     else chronoTouchDz=null;
+
+    // Auto-scroll when finger is near top/bottom edge
+    const edge=60;
+    const y=t.clientY;
+    const vh=window.innerHeight;
+    if(chronoScrollRAF) cancelAnimationFrame(chronoScrollRAF);
+    if(y>vh-edge){
+      (function scrollDown(){window.scrollBy(0,8);chronoScrollRAF=requestAnimationFrame(scrollDown);})();
+    } else if(y<edge){
+      (function scrollUp(){window.scrollBy(0,-8);chronoScrollRAF=requestAnimationFrame(scrollUp);})();
+    } else {
+      chronoScrollRAF=null;
+    }
   },{passive:false});
 
   card.addEventListener('touchend',()=>{
     card.classList.remove('is-dragging');
     clearDzHighlights();
+    if(chronoScrollRAF){cancelAnimationFrame(chronoScrollRAF);chronoScrollRAF=null;}
     if(chronoTouchDz!==null && !chronoLocked) commitDrop(chronoTouchDz);
     chronoTouchDz=null;
   });
@@ -1177,6 +1192,7 @@ function renderLkStack(){
   unplaced.forEach(ans=>stack.appendChild(makeLkCard(ans)));
 }
 
+let lkScrollRAF=null;
 function lkTouchMoveHandler(e){
   e.preventDefault();
   document.querySelectorAll('.lk-answer-slot').forEach(s=>s.classList.remove('drag-over'));
@@ -1188,6 +1204,16 @@ function lkTouchMoveHandler(e){
     lkTouchSlot=slot.dataset.answerId;
   } else {
     lkTouchSlot=null;
+  }
+  // Auto-scroll when finger near edge
+  const edge=60, y=t.clientY, vh=window.innerHeight;
+  if(lkScrollRAF) cancelAnimationFrame(lkScrollRAF);
+  if(y>vh-edge){
+    (function scrollDown(){window.scrollBy(0,8);lkScrollRAF=requestAnimationFrame(scrollDown);})();
+  } else if(y<edge){
+    (function scrollUp(){window.scrollBy(0,-8);lkScrollRAF=requestAnimationFrame(scrollUp);})();
+  } else {
+    lkScrollRAF=null;
   }
 }
 
@@ -1216,6 +1242,7 @@ function makeLkCard(ans){
   card.addEventListener('touchend',()=>{
     card.classList.remove('is-dragging');
     document.removeEventListener('touchmove', lkTouchMoveHandler);
+    if(lkScrollRAF){cancelAnimationFrame(lkScrollRAF);lkScrollRAF=null;}
     document.querySelectorAll('.lk-answer-slot').forEach(s=>s.classList.remove('drag-over'));
     if(lkTouchSlot) commitLkDrop(lkTouchSlot);
     lkDragging=null; lkTouchSlot=null;
