@@ -183,6 +183,7 @@ html,body{height:100%;background:#fdf6f9;font-family:'Quicksand',sans-serif;colo
     <div class="home-header">
       <div class="home-logo">🍼</div>
       <div class="home-title">Hilary and Mat's Baby Shower Trivia Bonanza</div>
+      <div style="font-size:10px;color:var(--text2);margin-top:2px;">v1.0</div>
     </div>
 
     <!-- Name entry — shown until name is confirmed -->
@@ -238,7 +239,7 @@ html,body{height:100%;background:#fdf6f9;font-family:'Quicksand',sans-serif;colo
     <span class="game-title">This or That</span>
     <span class="score-pill" id="tot-score-pill">0 / 0</span>
   </div>
-  <div class="instruction">Drag each name into the correct column. Can you tell which celebrity baby names are real?</div>
+  <div class="instruction">Drag each name into the correct column. Tap a placed name to move it back. Can you tell which celebrity baby names are real?</div>
   <div class="tot-categories">
     <div class="tot-cat tot-cat-a" id="tot-cat-a">
       <div class="tot-cat-label" id="tot-label-a">Category A</div>
@@ -570,37 +571,27 @@ function commitTotDrop(cat){
   badge.textContent=item.name;
   badge.dataset.name=item.name;
 
-  // Make placed badge draggable so it can be moved to the other category
+  // Desktop: drag badge to other category
   badge.draggable=true;
   badge.addEventListener('dragstart',e=>{
     e.dataTransfer.effectAllowed='move';
     totDragging=item;
     setTimeout(()=>badge.remove(),0);
   });
-  badge.addEventListener('touchstart',e=>{
-    totDragging=item; totTouchCat=null;
-    badge.style.opacity='0.3';
-    badge.style.pointerEvents='none'; // let elementFromPoint see through to zone
-  },{passive:true});
-  badge.addEventListener('touchmove',e=>{
-    e.preventDefault();
-    const t=e.touches[0];
-    const el=document.elementFromPoint(t.clientX,t.clientY);
-    const zone=el&&el.closest('.tot-cat');
-    totTouchCat=zone?zone.id.replace('tot-zone-',''):null;
-    document.querySelectorAll('.tot-cat').forEach(z=>z.classList.remove('drag-over'));
-    if(zone) zone.classList.add('drag-over');
-  },{passive:false});
-  badge.addEventListener('touchend',()=>{
-    badge.style.opacity='1';
-    badge.style.pointerEvents='';
-    document.querySelectorAll('.tot-cat').forEach(z=>z.classList.remove('drag-over'));
-    const targetCat=totTouchCat;
-    totDragging=null; totTouchCat=null;
-    if(targetCat && targetCat!==cat){
-      badge.remove();
-      commitTotDrop(targetCat);
-    }
+
+  // Mobile: tap placed badge to return it to pool for re-placement
+  badge.addEventListener('click',()=>{
+    // Don't allow unplacing after scoring
+    if(badge.classList.contains('correct')||badge.classList.contains('wrong')) return;
+    // Remove from placed
+    delete totPlaced[item.name];
+    badge.remove();
+    // Show back in pool
+    const poolEl=document.querySelector('#tot-pool .tot-item[data-name="'+item.name+'"]');
+    if(poolEl) poolEl.style.display='';
+    const placedCount=Object.keys(totPlaced).length;
+    document.getElementById('tot-score-pill').textContent=placedCount+' / '+TOT_DATA.items.length;
+    document.getElementById('tot-check-btn').style.display='none';
   });
 
   document.getElementById('tot-drop-'+cat).appendChild(badge);
