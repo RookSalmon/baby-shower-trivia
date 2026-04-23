@@ -1277,23 +1277,28 @@ function renderSlot(slotEl, ans){
   });
   slotEl.draggable=true;
 
-  // Touch: drag out from slot
+  // Touch: drag out from slot — only remove from original slot on valid drop elsewhere
+  const origSlotId = slotEl.dataset.answerId;
   slotEl.addEventListener('touchstart',()=>{
     lkDragging=ans; lkTouchSlot=null;
-    // Remove from placed immediately so it shows back in stack
-    delete lkPlaced[ans.id];
-    slotEl.innerHTML='';
-    slotEl.classList.remove('filled','wrong');
-    slotEl.draggable=false;
-    slotEl.style.cursor='';
-    renderLkStack();
-    checkSubmitVisibility();
+    slotEl.classList.add('is-dragging');
     document.addEventListener('touchmove', lkTouchMoveHandler, {passive:false});
   },{passive:true});
   slotEl.addEventListener('touchend',()=>{
+    slotEl.classList.remove('is-dragging');
     document.removeEventListener('touchmove', lkTouchMoveHandler);
+    if(lkScrollRAF){cancelAnimationFrame(lkScrollRAF);lkScrollRAF=null;}
     document.querySelectorAll('.lk-answer-slot').forEach(s=>s.classList.remove('drag-over'));
-    if(lkTouchSlot&&lkDragging) commitLkDrop(lkTouchSlot);
+    if(lkTouchSlot && lkDragging && lkTouchSlot !== origSlotId){
+      // Dropped on a different slot — remove from old, place in new
+      delete lkPlaced[ans.id];
+      slotEl.innerHTML='';
+      slotEl.classList.remove('filled','wrong');
+      slotEl.draggable=false;
+      slotEl.style.cursor='';
+      commitLkDrop(lkTouchSlot);
+    }
+    // If no valid drop or same slot — item stays in place
     lkDragging=null; lkTouchSlot=null;
   });
 }
