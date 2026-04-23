@@ -524,22 +524,24 @@ function makeTotCard(item){
   // Touch drag
   el.addEventListener('touchstart',()=>{
     totDragging=item; totTouchCat=null;
-    el.classList.add('is-dragging');
+    el.style.opacity='0.3';
+    el.style.pointerEvents='none';
   },{passive:true});
   el.addEventListener('touchmove',e=>{
     e.preventDefault();
     const t=e.touches[0];
-    document.querySelectorAll('.tot-cat').forEach(c=>c.classList.remove('drop-over'));
+    document.querySelectorAll('.tot-cat').forEach(c=>c.classList.remove('drag-over'));
     const hit=document.elementFromPoint(t.clientX,t.clientY);
     const col=hit&&hit.closest('.tot-cat');
     if(col){
-      col.classList.add('drop-over');
-      totTouchCat=col.id==='tot-cat-a'?'a':'b';
+      col.classList.add('drag-over');
+      totTouchCat=col.id.includes('-a')?'a':'b';
     } else totTouchCat=null;
   },{passive:false});
   el.addEventListener('touchend',()=>{
-    el.classList.remove('is-dragging');
-    document.querySelectorAll('.tot-cat').forEach(c=>c.classList.remove('drop-over'));
+    el.style.opacity='1';
+    el.style.pointerEvents='';
+    document.querySelectorAll('.tot-cat').forEach(c=>c.classList.remove('drag-over'));
     if(totTouchCat) commitTotDrop(totTouchCat);
     totDragging=null; totTouchCat=null;
   });
@@ -577,28 +579,28 @@ function commitTotDrop(cat){
   });
   badge.addEventListener('touchstart',e=>{
     totDragging=item; totTouchCat=null;
-    badge.classList.add('is-dragging');
+    badge.style.opacity='0.3';
+    badge.style.pointerEvents='none'; // let elementFromPoint see through to zone
   },{passive:true});
   badge.addEventListener('touchmove',e=>{
     e.preventDefault();
-    const t=e.touches[0],el=document.elementFromPoint(t.clientX,t.clientY);
+    const t=e.touches[0];
+    const el=document.elementFromPoint(t.clientX,t.clientY);
     const zone=el&&el.closest('.tot-cat');
     totTouchCat=zone?zone.id.replace('tot-zone-',''):null;
-    // Highlight the target zone
     document.querySelectorAll('.tot-cat').forEach(z=>z.classList.remove('drag-over'));
     if(zone) zone.classList.add('drag-over');
   },{passive:false});
   badge.addEventListener('touchend',()=>{
-    badge.classList.remove('is-dragging');
+    badge.style.opacity='1';
+    badge.style.pointerEvents='';
     document.querySelectorAll('.tot-cat').forEach(z=>z.classList.remove('drag-over'));
     const targetCat=totTouchCat;
     totDragging=null; totTouchCat=null;
     if(targetCat && targetCat!==cat){
-      // Dropped in a different category — move it
       badge.remove();
       commitTotDrop(targetCat);
     }
-    // If dropped in same category or outside — do nothing, badge stays put
   });
 
   document.getElementById('tot-drop-'+cat).appendChild(badge);
