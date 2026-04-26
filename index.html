@@ -17,7 +17,7 @@ html,body{height:100%;background:#fdf6f9;font-family:'Quicksand',sans-serif;colo
   --page-bg:#fdf6f9;
 }
 
-#app{max-width:430px;margin:0 auto;min-height:100vh;background:var(--page-bg);position:relative;overflow:hidden;}
+#app{max-width:430px;margin:0 auto;min-height:100vh;background:var(--page-bg);position:relative;}
 
 .screen{display:none;padding:20px;min-height:100vh;flex-direction:column;}
 .screen.active{display:flex;}
@@ -183,7 +183,7 @@ html,body{height:100%;background:#fdf6f9;font-family:'Quicksand',sans-serif;colo
     <div class="home-header">
       <div class="home-logo">🍼</div>
       <div class="home-title">Hilary and Mat's Baby Shower Trivia Bonanza</div>
-      <div style="font-size:10px;color:var(--text2);margin-top:2px;">v1.1</div>
+      <div style="font-size:10px;color:var(--text2);margin-top:2px;">v1.7</div>
     </div>
 
     <!-- Name entry — shown until name is confirmed -->
@@ -258,7 +258,7 @@ html,body{height:100%;background:#fdf6f9;font-family:'Quicksand',sans-serif;colo
 <!-- CHRONO -->
 <div id="screen-chrono" class="screen">
   <div class="game-header">
-    <button class="back-btn" onclick="goHome()">←</button>
+    <button class="back-btn" id="chrono-back-btn" onclick="goHome()" style="display:none">←</button>
     <span class="game-title">Chrono</span>
     <span class="score-pill" id="chrono-score-pill">0 / 9</span>
   </div>
@@ -266,14 +266,14 @@ html,body{height:100%;background:#fdf6f9;font-family:'Quicksand',sans-serif;colo
   <div class="game-progress" id="chrono-progress"></div>
   <div id="chrono-pending-area"></div>
   <div id="chrono-feedback" class="chrono-feedback" style="display:none"></div>
-  <div id="chrono-tl" class="chrono-tl"></div>
   <button class="action-btn btn-mint mt8" id="chrono-finish-btn" onclick="goHome()" style="display:none">Back to menu</button>
+  <div id="chrono-tl" class="chrono-tl"></div>
 </div>
 
 <!-- LINKS -->
 <div id="screen-links" class="screen">
   <div class="game-header">
-    <button class="back-btn" onclick="goHome()">←</button>
+    <button class="back-btn" id="links-back-btn" onclick="goHome()" style="display:none">←</button>
     <span class="game-title">Links</span>
     <span class="score-pill" id="links-score-pill">0 / 3</span>
   </div>
@@ -289,7 +289,7 @@ html,body{height:100%;background:#fdf6f9;font-family:'Quicksand',sans-serif;colo
 <!-- KNOCKOUT -->
 <div id="screen-ko" class="screen">
   <div class="game-header">
-    <button class="back-btn" onclick="goHome()">←</button>
+    <button class="back-btn" id="ko-back-btn" onclick="goHome()" style="display:none">←</button>
     <span class="game-title">Knockout</span>
     <span class="score-pill" id="ko-score-pill">0 / 0</span>
   </div>
@@ -767,10 +767,16 @@ function commitDrop(insertIdx){
   updateChronoProg();
 
   setTimeout(()=>{
-    fb.style.display='none';
-    chronoLocked=false;
-    if(chronoQueue.length>0) chronoNext();
-    else chronoDone();
+    try{
+      fb.style.display='none';
+      chronoLocked=false;
+      if(chronoQueue.length>0) chronoNext();
+      else chronoDone();
+    }catch(err){
+      console.error('Chrono timeout error:',err);
+      // Force show the button even if something breaks
+      chronoDone();
+    }
   },1800);
 }
 
@@ -807,6 +813,14 @@ function renderChronoTL(){
   const dzLast=document.createElement('div');
   dzLast.className='ct-drop'; dzLast.dataset.idx=chronoTimeline.length;
   wrap.appendChild(dzLast);
+
+  // Safety: if all events placed and button not visible, trigger chronoDone
+  if(chronoTimeline.length===CHRONO_EVENTS.length && chronoQueue.length===0 && !chronoCurrent){
+    const btn=document.getElementById('chrono-finish-btn');
+    if(btn && btn.style.display==='none'){
+      setTimeout(()=>chronoDone(),2000);
+    }
+  }
 }
 
 function updateChronoProg(){
@@ -827,14 +841,16 @@ function updateChronoProg(){
 function chronoDone(){
   document.getElementById('chrono-pending-area').innerHTML='';
   const total=CHRONO_EVENTS.length-1;
-  document.getElementById('chrono-fill').style.width='100%';
   document.getElementById('chrono-score-pill').textContent=chronoScore+' / '+total;
   const fb=document.getElementById('chrono-feedback');
   fb.className='chrono-feedback '+(chronoScore>=Math.ceil(total/2)?'win':'loss');
   fb.textContent='All done! You got '+chronoScore+' out of '+total+' correct.';
   fb.style.display='block';
   document.getElementById('chrono-finish-btn').style.display='block';
+  document.getElementById('chrono-back-btn').style.display='';
   SCORES.chrono=chronoScore;
+  // Scroll the finish button into view
+  setTimeout(()=>document.getElementById('chrono-finish-btn').scrollIntoView({behavior:'smooth',block:'center'}),100);
 }
 
 /* ── LINKS ── */
@@ -1347,7 +1363,7 @@ function submitLinks(){
   fb.className='chrono-feedback '+(lkScore===lkData().answers.length?'win':'loss');
   fb.textContent=lkScore===lkData().answers.length
     ?'Perfect! All correct!'
-    :'You got '+lkScore+' out of '+lkData().answers.length+'. Drag the red ones to fix them!';
+    :'You got '+lkScore+' out of '+lkData().answers.length+'. Tap the red ones to move them back!';
   fb.style.display='block';
 
   if(lkScore===lkData().answers.length){
@@ -1355,6 +1371,7 @@ function submitLinks(){
       document.getElementById('links-nextround-btn').style.display='block';
     } else {
       document.getElementById('links-next-btn').style.display='block';
+      document.getElementById('links-back-btn').style.display='';
     }
   } else {
     // Re-enable submit button so user can resubmit after rearranging
@@ -1395,10 +1412,11 @@ function resubmitLinks(){
       document.getElementById('links-nextround-btn').style.display='block';
     } else {
       document.getElementById('links-next-btn').style.display='block';
+      document.getElementById('links-back-btn').style.display='';
     }
   } else {
     fb.className='chrono-feedback loss';
-    fb.textContent='Still some wrong — drag the red ones to fix them!';
+    fb.textContent='Still some wrong — tap the red ones to move them back!';
     document.getElementById('links-submit-btn').textContent='Resubmit';
     document.getElementById('links-submit-btn').style.display='block';
   }
@@ -1506,6 +1524,7 @@ function koGuess(choice){
     document.getElementById('ko-finish-btn').style.display='block';
     document.getElementById('ko-finish-btn').textContent='Final score: '+koScore+'/'+rounds+' — Back to menu';
     document.getElementById('ko-finish-btn').onclick=showSubmitScreen;
+    document.getElementById('ko-back-btn').style.display='';
     SCORES.ko=koScore;
   }
 }
