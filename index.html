@@ -183,7 +183,7 @@ html,body{height:100%;background:#fdf6f9;font-family:'Quicksand',sans-serif;colo
     <div class="home-header">
       <div class="home-logo">🍼</div>
       <div class="home-title">Hilary and Mat's Baby Shower Trivia Bonanza</div>
-      <div style="font-size:10px;color:var(--text2);margin-top:2px;">v1.7</div>
+      <div style="font-size:10px;color:var(--text2);margin-top:2px;">v1.9</div>
     </div>
 
     <!-- Name entry — shown until name is confirmed -->
@@ -1086,7 +1086,7 @@ function addSlotListeners(el, id){
 
 function buildLkGridR2(){
   const COLS={green:{stroke:'#3A7D1E',fill:'rgba(130,210,80,0.15)',text:'#2A5C10',border:'#5AAB2A'},pink:{stroke:'#D4537E',fill:'rgba(244,192,209,0.22)',text:'#7A1F40',border:'#D4537E'},amber:{stroke:'#E8A020',fill:'rgba(250,199,117,0.18)',text:'#7A4800',border:'#E8A020'}};
-  const SLOT_W=104,SLOT_H=48,PILL_W=114,PILL_H=48,ROW_H=70,GAP=8;
+  const SLOT_W=104,SLOT_H=48,PILL_W=114,PILL_H=48,ROW_H=70,GAP=2;
   const wrap=document.getElementById('lk-grid');
   wrap.innerHTML='';wrap.className='lk-scene';wrap.style.cssText='position:relative;width:100%;margin-bottom:14px;';
   const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
@@ -1120,7 +1120,7 @@ function buildLkGridR2(){
 
 function buildLkGridR3(){
   const COLS={pink:{stroke:'#D4537E',fill:'rgba(244,192,209,0.22)',text:'#7A1F40',border:'#D4537E'},mint:{stroke:'#0F8C60',fill:'rgba(29,158,117,0.13)',text:'#085041',border:'#0F8C60'},amber:{stroke:'#E8A020',fill:'rgba(250,199,117,0.18)',text:'#7A4800',border:'#E8A020'},lav:{stroke:'#534AB7',fill:'rgba(206,203,246,0.22)',text:'#3C3489',border:'#534AB7'},yellow:{stroke:'#C8A800',fill:'rgba(255,230,80,0.18)',text:'#7A6400',border:'#C8A800'},blue:{stroke:'#1565C0',fill:'rgba(33,150,243,0.15)',text:'#0D47A1',border:'#1565C0'}};
-  const SLOT_W=104,SLOT_H=48,PILL_W=114,PILL_H=48,ROW_H=64,GAP=8;
+  const SLOT_W=104,SLOT_H=48,PILL_W=114,PILL_H=48,ROW_H=64,GAP=2;
   const wrap=document.getElementById('lk-grid');
   wrap.innerHTML='';wrap.className='lk-scene';wrap.style.cssText='position:relative;width:100%;margin-bottom:14px;';
   const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;overflow:visible;';wrap.appendChild(svg);
@@ -1153,7 +1153,7 @@ function buildLkGridR3(){
 
 function buildLkGridR4(){
   const COLS={pink:{stroke:'#D4537E',fill:'rgba(244,192,209,0.22)',text:'#7A1F40',border:'#D4537E'},mint:{stroke:'#0F8C60',fill:'rgba(29,158,117,0.13)',text:'#085041',border:'#0F8C60'},amber:{stroke:'#E8A020',fill:'rgba(250,199,117,0.18)',text:'#7A4800',border:'#E8A020'},lav:{stroke:'#534AB7',fill:'rgba(206,203,246,0.22)',text:'#3C3489',border:'#534AB7'}};
-  const SLOT_W=100,SLOT_H=44,PILL_W=110,GAP=8;
+  const SLOT_W=100,SLOT_H=44,PILL_W=110,GAP=2;
   const wrap=document.getElementById('lk-grid');
   wrap.innerHTML='';wrap.className='lk-scene';wrap.style.cssText='position:relative;width:100%;margin-bottom:14px;';
   const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;overflow:visible;';wrap.appendChild(svg);
@@ -1173,7 +1173,7 @@ function buildLkGridR4(){
     const G=GAP;
     ln(e[0].c.r+G,e[0].c.midY,e[0].r.l-G,e[0].r.midY,'pink');
     ln(e[1].l.r+G,e[1].l.midY,e[1].c.l-G,e[1].c.midY,'lav');
-    ln(e[1].c.r+G,e[1].c.midY,e[1].r.l-G,e[1].r.midY,'mint');
+    // R1: No horizontal line between Lindbergh and US Ambassador
     ln(e[2].l.r+G,e[2].l.midY,e[2].c.l-G,e[2].c.midY,'amber');
     ln(e[2].c.r+G,e[2].c.midY,e[2].r.l-G,e[2].r.midY,'amber');
     ln(e[3].l.r+G,e[3].l.midY,e[3].c.l-G,e[3].c.midY,'pink');
@@ -1547,8 +1547,11 @@ function showSubmitScreen(){
   const totalLkAnswers=LINKS_ROUNDS.reduce((s,r)=>s+r.answers.length,0);
   document.getElementById('submit-links').textContent=SCORES.links+' / '+totalLkAnswers;
   document.getElementById('submit-ko').textContent=SCORES.ko+' / '+(KO_ITEMS.length-1);
-  document.getElementById('submit-score-btn').style.display='block';
-  document.getElementById('submit-spinner').style.display='none';
+  const btn=document.getElementById('submit-score-btn');
+  btn.style.display='block';
+  btn.disabled=false;
+  btn.innerHTML='Submit score &#x1F389;';
+  btn.style.opacity='1';
   document.getElementById('submit-feedback').style.display='none';
   document.getElementById('submit-home-btn').style.display='none';
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
@@ -1557,7 +1560,10 @@ function showSubmitScreen(){
 
 function submitScore(){
   const name=playerName;
-  document.getElementById('submit-score-btn').style.display='none';
+  const btn=document.getElementById('submit-score-btn');
+  btn.disabled=true;
+  btn.innerHTML='<span class="spinner" style="display:inline-block;width:18px;height:18px;border-width:2px;vertical-align:middle;margin-right:8px;"></span>Submitting...';
+  btn.style.opacity='0.7';
   const total=SCORES.tot+SCORES.chrono+SCORES.links+SCORES.ko;
   fetch(SCORE_URL,{
     method:'POST',
@@ -1565,18 +1571,20 @@ function submitScore(){
       elapsed:SCORES.startTime?Math.round((Date.now()-SCORES.startTime)/1000):null}),
   })
   .then(()=>{
-    document.getElementById('submit-spinner').style.display='none';
+    document.getElementById('submit-score-btn').style.display='none';
     const fb=document.getElementById('submit-feedback');
     fb.style.cssText='display:block;text-align:center;padding:12px;border-radius:12px;margin-top:12px;font-size:14px;font-weight:700;background:#EAF3DE;color:#27500A;';
     fb.innerHTML='Score submitted! Thanks, '+name+' &#x1F389;';
     document.getElementById('submit-home-btn').style.display='block';
   })
   .catch(()=>{
-    document.getElementById('submit-spinner').style.display='none';
+    const btn2=document.getElementById('submit-score-btn');
+    btn2.disabled=false;
+    btn2.innerHTML='Submit score &#x1F389;';
+    btn2.style.opacity='1';
     const fb=document.getElementById('submit-feedback');
     fb.style.cssText='display:block;text-align:center;padding:12px;border-radius:12px;margin-top:12px;font-size:14px;font-weight:700;background:#FCEBEB;color:#A32D2D;';
     fb.textContent='Something went wrong. Please try again.';
-    document.getElementById('submit-score-btn').style.display='block';
   });
 }
 
